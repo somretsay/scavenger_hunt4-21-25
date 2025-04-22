@@ -151,17 +151,11 @@ class Zone(models.Model):
         ordering = ['created_at']
 
 class Question(models.Model):
-    #zone = models.ForeignKey(Zone, on_delete=models.CASCADE, related_name='questions')
+    race = models.ForeignKey('Race', on_delete=models.CASCADE)  # Add race link directly
     text = models.TextField()
-    answer = models.CharField(max_length=200)
-    created_at = models.DateTimeField(auto_now_add=True)
-    requires_photo = models.BooleanField(default=False)
+    answer = models.CharField(max_length=255)
+    points = models.IntegerField(default=100)
 
-    def __str__(self):
-        return f"Question for {self.zone.name}"
-
-    class Meta:
-        ordering = ['created_at']
 
 class TeamProgress(models.Model):
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='progress')
