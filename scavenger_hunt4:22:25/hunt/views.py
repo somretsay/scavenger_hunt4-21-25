@@ -1312,26 +1312,30 @@ def add_zone(request, race_id):
 @require_POST
 def add_question(request, race_id):
     """
-    Create a new question directly on the given race (no zones).
+    Handle the “Add Question” form submission.
+    No more zones—just text and answer.
     """
-    race   = get_object_or_404(Race, id=race_id)
-    text   = request.POST.get('text', '').strip()
-    answer = request.POST.get('answer', '').strip()
+    race = get_object_or_404(Race, id=race_id)
 
-    if not text or not answer:
-        messages.error(request, "Both question text and answer are required.")
-        return redirect('race_detail', race_id=race_id)
+    if request.method == 'POST':
+        text   = request.POST.get('text', '').strip()
+        answer = request.POST.get('answer', '').strip()
 
-    try:
-        Question.objects.create(
-            race=race,
-            text=text,
-            answer=answer
-        )
-        messages.success(request, "Question added successfully!")
-    except Exception as e:
-        messages.error(request, f"Error adding question: {e}")
-    return redirect('race_detail', race_id=race_id)
+        if not text or not answer:
+            messages.error(request, 'Both question text and answer are required.')
+        else:
+            try:
+                # Create the Question—zones have been removed, so we only supply text & answer
+                Question.objects.create(
+                    text=text,
+                    answer=answer
+                )
+                messages.success(request, 'Question added successfully!')
+            except Exception as e:
+                messages.error(request, f'Error adding question: {e}')
+
+    # Whether GET or POST, always redirect back to the race detail
+    return redirect('race_detail', race_id=race.id)
 
 def student_question(request, lobby_id, question_id):
     """Display a question to the student"""
