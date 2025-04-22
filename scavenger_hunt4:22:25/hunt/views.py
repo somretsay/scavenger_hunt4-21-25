@@ -1088,32 +1088,14 @@ def manage_riddles(request):
 @login_required
 def race_detail(request, race_id):
     race = get_object_or_404(Race, id=race_id)
-    try:
-        zones = Zone.objects.filter(race=race).order_by('created_at')
-    except:
-        zones = []
     
-    try:
-        questions = Question.objects.filter(zone__race=race).select_related('zone').order_by('zone__created_at')
-    except:
-        questions = []
-    
-    # Count questions per zone for the template
-    question_counts = {}
-    for question in questions:
-        zone_id = question.zone.id
-        if zone_id in question_counts:
-            question_counts[zone_id] += 1
-        else:
-            question_counts[zone_id] = 1
-    
+    questions = Question.objects.filter(race=race)
+
     context = {
         'race': race,
-        'zones': zones,
         'questions': questions,
-        'question_counts': question_counts,
     }
-    return render(request, 'hunt/race_detail.html', context)
+    return render(request, 'race_detail.html', context)
 
 @login_required
 def edit_zone(request, race_id):
