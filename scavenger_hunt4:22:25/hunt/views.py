@@ -1309,30 +1309,28 @@ def add_zone(request, race_id):
             
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
+@require_POST
 def add_question(request, race_id):
-    if request.method == 'POST':
-        race = get_object_or_404(Race, id=race_id)
-        text = request.POST.get('text')
-        answer = request.POST.get('answer')
-        zone_id = request.POST.get('zone')
-        
-        default_zone, created = Zone.objects.get_or_create(
-        race=race,
-        defaults={'name': 'General'}  
-    )
-        try:
-            zone = Zone.objects.get(id=zone_id, race=race)
-            Question.objects.create(
-                zone=default_zone,
-                text=text,
-                answer=answer
-            )
-            messages.success(request, 'Question added successfully!')
-        except Zone.DoesNotExist:
-            messages.error(request, 'Selected zone does not exist.')
-        except Exception as e:
-            messages.error(request, f'Error adding question: {str(e)}')
-            
+    """
+    Create a new question directly on the given race (no zones).
+    """
+    race   = get_object_or_404(Race, id=race_id)
+    text   = request.POST.get('text', '').strip()
+    answer = request.POST.get('answer', '').strip()
+
+    if not text or not answer:
+        messages.error(request, "Both question text and answer are required.")
+        return redirect('race_detail', race_id=race_id)
+
+    try:
+        Question.objects.create(
+            race=race,
+            text=text,
+            answer=answer
+        )
+        messages.success(request, "Question added successfully!")
+    except Exception as e:
+        messages.error(request, f"Error adding question: {e}")
     return redirect('race_detail', race_id=race_id)
 
 def student_question(request, lobby_id, question_id):
