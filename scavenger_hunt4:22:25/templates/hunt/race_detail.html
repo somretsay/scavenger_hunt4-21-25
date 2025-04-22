@@ -75,7 +75,7 @@
                                 </div>
                             </div>
                             <div class="question-actions">
-                                <button class="edit-btn" onclick="editQuestion({{ question.id }}, '{{ question.text|escapejs }}', '{{ question.answer|escapejs }}', {{ question.zone.id }})" title="Edit Question">
+                                <button class="edit-btn" onclick="editQuestion({{ question.id }}, '{{ question.text|escapejs }}', '{{ question.answer|escapejs }}', )" title="Edit Question">
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 <button class="delete-btn" onclick="confirmDeleteQuestion({{ question.id }})" title="Delete Question">
@@ -704,7 +704,6 @@ function editQuestion(questionId, questionText, questionAnswer, zoneId) {
     document.getElementById('questionId').value = questionId;
     document.getElementById('questionText').value = questionText;
     document.getElementById('questionAnswer').value = questionAnswer;
-    document.getElementById('zoneSelect').value = zoneId;
     document.getElementById('questionForm').action = '{% url "edit_question" race.id %}';
     document.getElementById('questionModal').style.display = 'block';
 }
