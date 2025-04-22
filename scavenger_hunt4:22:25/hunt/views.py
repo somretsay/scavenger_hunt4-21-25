@@ -1316,10 +1316,14 @@ def add_question(request, race_id):
         answer = request.POST.get('answer')
         zone_id = request.POST.get('zone')
         
+        default_zone, created = Zone.objects.get_or_create(
+        race=race,
+        defaults={'name': 'General'}  
+    )
         try:
             zone = Zone.objects.get(id=zone_id, race=race)
             Question.objects.create(
-                zone=zone,
+                zone=default_zone,
                 text=text,
                 answer=answer
             )
