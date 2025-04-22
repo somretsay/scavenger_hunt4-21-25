@@ -64,24 +64,18 @@
                 {% if questions %}
                     <div class="questions-list">
                         {% for question in questions %}
-                        <div class="question-item">
-                            <div class="question-content" onclick="editQuestion({{ question.id }}, '{{ question.text|escapejs }}', '{{ question.answer|escapejs }}', {{ question.zone.id }})">
-                                <div class="question-header">
-                                    <i class="fas fa-question-circle"></i>
-                                    <span>{{ question.text }}</span>
-                                </div>
-                                <div class="question-answer">
-                                    <strong>Answer:</strong> {{ question.answer }}
-                                </div>
-                            </div>
-                            <div class="question-actions">
-                                <button class="edit-btn" onclick="editQuestion({{ question.id }}, '{{ question.text|escapejs }}', '{{ question.answer|escapejs }}')">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="delete-btn" onclick="confirmDeleteQuestion({{ question.id }})">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
+                        <div class="question-item" id="question-{{ question.id }}">
+                            <div class="question-text">{{ question.text }}</div>
+                            <div class="question-answer">{{ question.answer }}</div>
+                            <div class="question-points">{{ question.points }} pts</div>
+                            <button type="button" class="edit-btn" onclick="editQuestion({{ question.id }}, '{{ question.text|escapejs }}', '{{ question.answer|escapejs }}')" title="Edit Question">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button type="button" class="delete-btn" onclick="confirmDeleteQuestion({{ question.id }})" title="Delete Question">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        
                         </div>
                         {% endfor %}
                     </div>
