@@ -1095,7 +1095,7 @@ def race_detail(request, race_id):
         'race': race,
         'questions': questions,
     }
-    return render(request, 'race_detail.html', context)
+    return render(request, 'hunt/race_detail.html', context)
 
 @login_required
 def edit_zone(request, race_id):
