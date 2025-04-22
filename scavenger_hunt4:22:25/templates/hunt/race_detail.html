@@ -75,7 +75,7 @@
                                 </div>
                             </div>
                             <div class="question-actions">
-                                <button class="edit-btn" onclick="editQuestion({{ question.id }}, '{{ question.text|escapejs }}', '{{ question.answer|escapejs }}', )" title="Edit Question">
+                                <button class="edit-btn" onclick="editQuestion({{ question.id }}, '{{ question.text|escapejs }}', '{{ question.answer|escapejs }}')">
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 <button class="delete-btn" onclick="confirmDeleteQuestion({{ question.id }})" title="Delete Question">
