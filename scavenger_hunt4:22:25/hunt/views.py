@@ -26,6 +26,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db import connection
 import time
 import uuid
+from django.contrib              import messages
+from .models                     import Race, Zone, Question
 
 logger = logging.getLogger(__name__)
 
