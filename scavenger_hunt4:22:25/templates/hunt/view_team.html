@@ -1,0 +1,484 @@
+{% extends "base.html" %}
+
+{% block title %}Team: {{ team.name }}{% endblock %}
+
+{% block head_extras %}
+<style>
+    /* Modern futuristic color scheme */
+    :root {
+        --primary: #1a2980;
+        --primary-light: #26d0ce;
+        --secondary: #7303c0;
+        --secondary-light: #ec38bc;
+        --accent: #fdbb2d;
+        --dark: #121212;
+        --light: #f5f5f5;
+        --success: #38ef7d;
+        --warning: #ff4e50;
+        --gray: #333333;
+        --card-bg: rgba(255, 255, 255, 0.1);
+    }
+
+    body {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        position: relative;
+        overflow-x: hidden;
+    }
+
+    /* Background animation */
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='rgba(255,255,255,0.05)' fill-rule='evenodd'/%3E%3C/svg%3E");
+        z-index: -1;
+        animation: animatedBackground 50s linear infinite;
+    }
+
+    @keyframes animatedBackground {
+        from {
+            background-position: 0 0;
+        }
+        to {
+            background-position: 100% 100%;
+        }
+    }
+
+    .content-wrapper {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .team-dashboard {
+        backdrop-filter: blur(10px);
+        background: rgba(25, 25, 40, 0.7);
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        padding: 30px;
+        margin-bottom: 30px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .team-dashboard::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 5px;
+        background: linear-gradient(90deg, var(--primary-light), var(--secondary-light), var(--accent));
+    }
+
+    .team-dashboard:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .team-name {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 20px;
+    text-align: center;
+        background: linear-gradient(90deg, var(--primary-light), var(--secondary-light));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        position: relative;
+        display: inline-block;
+    }
+
+    .race-status {
+        background: var(--card-bg);
+        border-radius: 15px;
+        padding: 20px;
+    margin-bottom: 30px;
+        text-align: center;
+        position: relative;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .race-status-title {
+        font-size: 1.3rem;
+        font-weight: bold;
+        margin-bottom: 15px;
+        color: var(--accent);
+    }
+
+    .race-status-not-started {
+        background: var(--card-bg);
+        padding: 15px;
+        border-radius: 10px;
+        border-left: 4px solid var(--warning);
+        margin-bottom: 15px;
+    }
+
+    .race-status-started {
+        background: var(--card-bg);
+        padding: 15px;
+        border-radius: 10px;
+        border-left: 4px solid var(--success);
+        display: none;
+    }
+
+    .countdown {
+        font-size: 2rem;
+        font-weight: bold;
+        color: var(--accent);
+        margin: 15px 0;
+    }
+
+    .loader {
+        display: inline-block;
+        width: 80px;
+        height: 80px;
+        margin: 20px auto;
+    }
+    
+    .loader:after {
+        content: " ";
+        display: block;
+        width: 64px;
+        height: 64px;
+        margin: 8px;
+        border-radius: 50%;
+        border: 6px solid var(--accent);
+        border-color: var(--accent) transparent var(--accent) transparent;
+        animation: loader 1.2s linear infinite;
+    }
+    
+    @keyframes loader {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+}
+
+.members-section {
+        background: var(--card-bg);
+        border-radius: 15px;
+    padding: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .members-title {
+        font-size: 1.5rem;
+        margin-bottom: 20px;
+        color: var(--primary-light);
+    text-align: center;
+        font-weight: bold;
+}
+
+    .member-grid {
+    display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.member-card {
+        background: rgba(30, 30, 45, 0.7);
+        border-radius: 15px;
+    padding: 20px;
+        text-align: center;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+}
+
+.member-card:hover {
+    transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .member-card::before {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+        top: -100%;
+        left: -100%;
+        transition: all 0.6s ease;
+    }
+
+    .member-card:hover::before {
+        top: 100%;
+        left: 100%;
+    }
+
+    .member-name {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+        color: white;
+    }
+    
+    .current-user {
+        background: linear-gradient(135deg, rgba(115, 3, 192, 0.3), rgba(236, 56, 188, 0.3));
+        position: relative;
+    }
+    
+    .current-user::after {
+        content: 'You';
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: var(--accent);
+        color: var(--dark);
+        padding: 3px 10px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+
+    .back-btn {
+        display: inline-block;
+        background: linear-gradient(135deg, var(--primary-light), var(--primary));
+        color: white;
+        padding: 12px 30px;
+        border-radius: 50px;
+    text-decoration: none;
+    font-weight: bold;
+        margin-top: 20px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+    }
+
+    .back-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 0%;
+        height: 100%;
+        background: linear-gradient(135deg, var(--secondary-light), var(--secondary));
+        transition: all 0.3s ease;
+        z-index: -1;
+        border-radius: 50px;
+    }
+
+    .back-btn:hover::before {
+        width: 100%;
+    }
+
+    .back-btn:hover {
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+        transform: translateY(-2px);
+}
+</style>
+{% endblock %}
+
+{% block welcome_text %}
+<h1>Team Dashboard</h1>
+{% endblock %}
+
+{% block body_attributes %}class="team-view-page"{% endblock %}
+
+{% block content %}
+<div class="team-dashboard">
+    <h2 class="team-name">{{ team.name }}</h2>
+
+    <div class="race-status">
+        <h3 class="race-status-title">Race Status</h3>
+        
+        {% if not race_started %}
+        <div class="race-status-not-started">
+            <p><strong>Race Not Started</strong></p>
+            <p>Please wait for the leader to start the race.</p>
+            <div class="loader"></div>
+        </div>
+        <div class="race-status-started" 
+            {% if team and lobby and lobby.race %}
+            data-redirect-url="/race/{{ lobby.race.id }}/questions/?team_code={{ team.code }}&player_name={{ player_name }}"
+            {% else %}
+            data-redirect-url="{% url 'student_question' lobby_id=lobby.id question_id=1 %}"
+            {% endif %}
+        >
+            <p><strong>Race has started!</strong></p>
+            <p>You will be redirected to the race page in...</p>
+            <div class="countdown" id="countdown">5</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="members-section">
+        <h3 class="members-title">Team Members</h3>
+        
+        <div class="member-grid">
+        {% for member in team_members %}
+            <div class="member-card {% if member.role == player_name %}current-user{% endif %}">
+                <div class="member-name">{{ member.role }}</div>
+            </div>
+        {% endfor %}
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 30px;">
+        <a href="{% url 'join_team' %}" class="back-btn">Back to Teams</a>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+        // Show/hide the appropriate sections based on race status
+        const raceNotStarted = document.querySelector('.race-status-not-started');
+        const raceStarted = document.querySelector('.race-status-started');
+        
+        // Initially hide the race started section
+        if (raceStarted) {
+            raceStarted.style.display = 'none';
+        }
+        
+        // Initialize WebSocket connection for race status updates
+        const lobbyId = "{{ lobby.id|escapejs }}";
+        const teamId = "{{ team.id|escapejs }}";
+        let raceStatusSocket = null;
+        let reconnectAttempts = 0;
+        let checkInterval = null;
+        let hasRedirected = false;
+        
+        function connectWebSocket() {
+            if (raceStatusSocket) {
+                raceStatusSocket.close();
+            }
+            
+            raceStatusSocket = new WebSocket(
+                'ws://' + window.location.host + '/ws/race/' + lobbyId + '/'
+            );
+
+            raceStatusSocket.onopen = function(e) {
+                console.log('WebSocket connection established');
+                // Immediately check status in case we missed the race_started event
+                raceStatusSocket.send(JSON.stringify({
+                    'action': 'check_status'
+                }));
+                
+                // Also use polling as backup
+                if (!checkInterval) {
+                    checkInterval = setInterval(checkRaceStatus, 3000);
+                }
+            };
+            
+            raceStatusSocket.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+                console.log('WebSocket message received:', data);
+                if (data.type === 'race_started') {
+                    // Stop race status polling if it's running
+                    if (checkInterval) {
+                        clearInterval(checkInterval);
+                        checkInterval = null;
+                    }
+                    handleRaceStart();
+                }
+            };
+
+            raceStatusSocket.onclose = function(e) {
+                console.log('Race status socket closed:', e);
+                
+                // Reconnect logic with backoff
+                if (reconnectAttempts < 3 && !hasRedirected) {
+                    const timeout = Math.pow(2, reconnectAttempts) * 1000;
+                    console.log(`Reconnecting in ${timeout/1000} seconds...`);
+                    setTimeout(connectWebSocket, timeout);
+                    reconnectAttempts++;
+                } else {
+                    // If we've tried reconnecting too many times, rely only on polling
+                    if (!checkInterval && !hasRedirected) {
+                        console.log('Switching to polling only');
+                        checkInterval = setInterval(checkRaceStatus, 3000);
+                    }
+                }
+            };
+
+            raceStatusSocket.onerror = function(e) {
+                console.error('WebSocket error:', e);
+            };
+        }
+
+        function handleRaceStart() {
+            if (hasRedirected) return;
+            
+            console.log('Race has started! Preparing for redirect...');
+            
+            // Update UI to show countdown
+            if (raceNotStarted) raceNotStarted.style.display = 'none';
+            if (raceStarted) raceStarted.style.display = 'block';
+            
+            let count = 5;
+            const countdownElement = document.getElementById('countdown');
+            if (!countdownElement) return;
+            
+            countdownElement.textContent = count;
+            
+            const interval = setInterval(function() {
+                count--;
+                countdownElement.textContent = count;
+                
+                if (count <= 0) {
+                    clearInterval(interval);
+                    hasRedirected = true;
+                    
+                    // Close WebSocket before redirecting
+                    if (raceStatusSocket && raceStatusSocket.readyState === WebSocket.OPEN) {
+                        raceStatusSocket.close();
+                    }
+                    
+                    // Stop any polling
+                    if (checkInterval) {
+                        clearInterval(checkInterval);
+                        checkInterval = null;
+                    }
+                    
+                    // Get the redirect URL from the data attribute
+                    var redirectUrl = raceStarted.getAttribute('data-redirect-url');
+                    window.location.href = redirectUrl;
+                }
+            }, 1000);
+        }
+
+        function checkRaceStatus() {
+            if (hasRedirected) return;
+            
+            console.log('Polling for race status...');
+            fetch('/api/lobby/' + lobbyId + '/race-status/')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Race status response:', data);
+                    if (data.started) {
+                        // Stop polling
+                        if (checkInterval) {
+                            clearInterval(checkInterval);
+                            checkInterval = null;
+                        }
+                        handleRaceStart();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking race status:', error);
+                });
+        }
+        
+        // Start the WebSocket connection
+        connectWebSocket();
+        
+        // Also check immediately
+        checkRaceStatus();
+});
+</script>
+{% endblock %} 

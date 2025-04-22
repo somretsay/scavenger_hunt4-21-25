@@ -1,0 +1,894 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Lobby: {{ lobby.name }}{% endblock %}
+
+{% block welcome_text %}
+    <p style="color: #90C83C">Game Lobby Management</p>
+{% endblock %}
+
+{% block content %}
+<!-- Delete Confirmation Modal -->
+<div id="deleteConfirmModal" class="modal">
+    <div class="modal-content">
+        <h3>Delete Team</h3>
+        <p>Are you sure you want to delete this team?</p>
+        <div class="modal-buttons">
+            <button onclick="confirmDelete()" class="btn-delete">Yes, Delete</button>
+            <button onclick="closeModal()" class="btn-cancel">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Race Started Notification -->
+<div id="race-started-notification" style="display: none;">
+    <div class="race-started-content">
+        <h2 class="race-title">Race Started!</h2>
+        <p class="race-description">The race has begun! You will be redirected to the questions page.</p>
+        <div class="countdown-container">
+            <div class="countdown-circle">
+                <div class="countdown-spinner"></div>
+                <span id="countdown" class="countdown-number">5</span>
+            </div>
+        </div>
+        <p id="race-countdown">Redirecting in 5 seconds...</p>
+        <p class="mt-4">
+            <a id="go-to-race-btn" href="#" class="btn btn-success btn-lg">Go to Race Now</a>
+        </p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="dashboard-box">
+        <h1>{{ lobby.name|default:"Lobby Details" }}</h1>
+        
+        <div class="info-card">
+            <div class="card-body">
+                <p><strong>Code:</strong> {{ lobby.code }}</p>
+                <p><strong>Status:</strong> 
+                    <span class="status-indicator {% if lobby.is_active %}active{% else %}inactive{% endif %}">
+                        {% if lobby.is_active %}Active{% else %}Inactive{% endif %}
+                    </span>
+                </p>
+                <p><strong>Race:</strong> {{ lobby.race.name|default:"No race assigned" }}</p>
+                <p><strong>Teams:</strong> {{ lobby.teams.count }}</p>
+                <p><strong>Created:</strong> {{ lobby.created_at|date:"F d, Y" }}</p>
+            </div>
+        </div>
+        
+        <div class="section-header">
+            <h2>Teams</h2>
+        </div>
+        
+        {% if lobby.teams.all %}
+            <div class="teams-grid">
+                {% for team in lobby.teams.all %}
+                    <div class="team-card" data-team-id="{{ team.id }}">
+                        <div class="team-header">
+                            <h3>{{ team.name }}</h3>
+                            <span class="team-code">Code: {{ team.code }}</span>
+                        </div>
+                        <div class="team-body">
+                            <p><strong>Members:</strong> {{ team.members.count }}</p>
+                            <ul class="members-list">
+                                {% for member in team.members.all %}
+                                    <li>{{ member.role }}</li>
+                                {% empty %}
+                                    <li class="no-members">No members</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="team-actions">
+                            <a href="{% url 'view_team' team.id %}" class="btn btn-view">View Team</a>
+                            <button class="btn btn-delete" onclick="confirmDeleteTeam({{ team.id }})">Delete Team</button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="no-teams">
+                <p>No teams have joined this lobby yet.</p>
+            </div>
+        {% endif %}
+        
+        <div class="back-button-container">
+            <a href="{% url 'manage_lobbies' %}" class="btn btn-primary">Back to Lobbies</a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .dashboard-box {
+        background-color: rgba(33, 37, 41, 0.9);
+        border-radius: 12px;
+        border: 2px solid rgba(144, 200, 60, 0.3);
+        padding: 30px;
+        margin-bottom: 30px;
+    }
+    
+    h1 {
+        color: #90C83C;
+        text-align: center;
+        margin-bottom: 30px;
+        font-size: 2.5rem;
+    }
+    
+    .info-card {
+        background-color: rgba(0, 0, 0, 0.3);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .card-body p {
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+    }
+    
+    .status-indicator {
+        padding: 5px 10px;
+        border-radius: 12px;
+        font-weight: bold;
+    }
+    
+    .status-indicator.active {
+        background-color: rgba(40, 167, 69, 0.2);
+        color: #28a745;
+    }
+    
+    .status-indicator.inactive {
+        background-color: rgba(220, 53, 69, 0.2);
+        color: #dc3545;
+    }
+    
+    .section-header {
+        text-align: center;
+        margin: 30px 0;
+    }
+    
+    .section-header h2 {
+        color: #90C83C;
+        font-size: 2rem;
+    }
+    
+    .teams-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .team-card {
+        background-color: rgba(0, 0, 0, 0.3);
+        border-radius: 8px;
+        border: 1px solid rgba(144, 200, 60, 0.3);
+        overflow: hidden;
+        transition: transform 0.2s;
+    }
+    
+    .team-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .team-header {
+        background-color: rgba(144, 200, 60, 0.1);
+        padding: 15px;
+        border-bottom: 1px solid rgba(144, 200, 60, 0.3);
+    }
+    
+    .team-header h3 {
+        margin: 0;
+        color: #90C83C;
+    }
+    
+    .team-code {
+        font-size: 0.9rem;
+        color: #adb5bd;
+    }
+    
+    .team-body {
+        padding: 15px;
+    }
+    
+    .members-list {
+        list-style: none;
+        padding-left: 0;
+        margin-bottom: 0;
+    }
+    
+    .members-list li {
+        padding: 5px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .members-list li:last-child {
+        border-bottom: none;
+    }
+    
+    .no-members {
+        color: #6c757d;
+        font-style: italic;
+    }
+    
+    .team-actions {
+        padding: 15px;
+        border-top: 1px solid rgba(144, 200, 60, 0.3);
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .btn {
+        padding: 8px 16px;
+        border-radius: 4px;
+        color: #fff;
+        text-decoration: none;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+    
+    .btn:hover {
+        transform: translateY(-2px);
+    }
+    
+    .btn-view {
+        background-color: #17a2b8;
+    }
+    
+    .btn-delete {
+        background-color: #dc3545;
+    }
+    
+    .btn-primary {
+        background-color: #90C83C;
+        display: inline-block;
+    }
+    
+    .back-button-container {
+        text-align: center;
+        margin-top: 30px;
+    }
+    
+    .no-teams {
+        text-align: center;
+        padding: 30px;
+        background-color: rgba(0, 0, 0, 0.3);
+        border-radius: 8px;
+        font-style: italic;
+        color: #adb5bd;
+    }
+    
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .modal-content {
+        background-color: #343a40;
+        padding: 30px;
+        border-radius: 8px;
+        max-width: 500px;
+        width: 90%;
+        text-align: center;
+    }
+    
+    .modal-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    .btn-delete {
+        background-color: #dc3545;
+    }
+    
+    .btn-cancel {
+        background-color: #6c757d;
+    }
+    
+    /* Styles for real-time notifications */
+    .race-started-alert {
+        padding: 15px;
+        margin-top: 20px;
+        border-radius: 8px;
+        background-color: rgba(40, 167, 69, 0.2);
+        border: 1px solid rgba(40, 167, 69, 0.4);
+        color: #28a745;
+        text-align: center;
+        font-weight: bold;
+        transition: opacity 0.3s;
+    }
+    
+    /* Race Started Notification Styles */
+    #race-started-notification {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .race-started-content {
+        background-color: rgba(40, 43, 48, 0.95);
+        border: 2px solid #90C83C;
+        border-radius: 15px;
+        max-width: 500px;
+        width: 90%;
+        padding: 40px 30px;
+        text-align: center;
+        box-shadow: 0 0 30px rgba(144, 200, 60, 0.4);
+    }
+    
+    .race-title {
+        color: #90C83C;
+        margin-bottom: 20px;
+        font-size: 2.5rem;
+        text-shadow: 0 0 10px rgba(144, 200, 60, 0.5);
+    }
+    
+    .race-description {
+        color: white;
+        font-size: 1.2rem;
+        margin-bottom: 30px;
+    }
+    
+    .countdown-container {
+        display: flex;
+        justify-content: center;
+        margin: 30px 0;
+    }
+    
+    .countdown-circle {
+        position: relative;
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 20px rgba(144, 200, 60, 0.3);
+    }
+    
+    .countdown-spinner {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 4px solid rgba(144, 200, 60, 0.2);
+        border-top-color: #90C83C;
+        animation: spin 1s linear infinite;
+    }
+    
+    .countdown-number {
+        color: white;
+        font-size: 3rem;
+        font-weight: bold;
+        z-index: 1;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Global variable to store the team ID to delete
+    let teamIdToDelete = null;
+    let lastUpdateTime = 0;
+    let wsConnected = false;
+    let pollingEnabled = true;
+    
+    // Get CSRF token from cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    function showModal() {
+        document.getElementById('deleteConfirmModal').style.display = 'block';
+    }
+    
+    function closeModal() {
+        document.getElementById('deleteConfirmModal').style.display = 'none';
+    }
+    
+    function confirmDeleteTeam(teamId) {
+        teamIdToDelete = teamId;
+        showModal();
+    }
+    
+    function confirmDelete() {
+        if (teamIdToDelete) {
+            deleteTeam(teamIdToDelete);
+        }
+        closeModal();
+    }
+    
+    function deleteTeam(teamId) {
+        fetch(`/team/${teamId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+                return;
+            }
+            
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            
+            return response.json();
+        })
+        .then(data => {
+            if (data && data.status === 'success') {
+                // Remove the team card from the DOM
+                const teamElement = document.querySelector(`[data-team-id="${teamId}"]`);
+                if (teamElement && teamElement.parentElement) {
+                    teamElement.parentElement.removeChild(teamElement);
+                    
+                    // Force an immediate refresh to show updated state
+                    refreshTeamData(true);
+                } else {
+                    // If we can't find the team element, just reload the page
+                    location.reload();
+                }
+            } else {
+                // If we get here with no data or failed status, just reload
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Just reload the page instead of showing alert
+            location.reload();
+        });
+    }
+    
+    function deleteLobby(lobbyId) {
+        fetch(`/lobby/${lobbyId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => {
+            if (response.ok || response.redirected) {
+                window.location.href = '{% url "manage_lobbies" %}';
+            } else {
+                throw new Error('Failed to delete lobby');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting lobby: ' + error.message);
+        });
+    }
+    
+    // Function to show race started notification and redirect
+    function startCountdownAndRedirect(raceId, redirectUrl) {
+        // Show race started notification
+        const notification = document.getElementById('race-started-notification');
+        if (notification) {
+            notification.style.display = 'flex'; // Use flex to center content
+            
+            // Update the "Go to Race Now" button link
+            const raceButton = document.getElementById('go-to-race-btn');
+            if (raceButton && redirectUrl) {
+                raceButton.href = redirectUrl;
+            } else if (raceButton && raceId) {
+                raceButton.href = `/race/${raceId}/questions/`;
+            }
+            
+            // Start countdown
+            let countdownEl = document.getElementById('countdown');
+            let countdownMsgEl = document.getElementById('race-countdown');
+            
+            if (countdownEl && countdownMsgEl) {
+                let seconds = 5;
+                
+                // Update countdown every second
+                let countdownInterval = setInterval(function() {
+                    seconds--;
+                    countdownEl.textContent = seconds;
+                    countdownMsgEl.textContent = `Redirecting in ${seconds} seconds...`;
+                    
+                    // When countdown reaches 0, redirect
+                    if (seconds <= 0) {
+                        clearInterval(countdownInterval);
+                        console.log("Countdown complete, redirecting to:", redirectUrl || `/race/${raceId}/questions/`);
+                        window.location.href = redirectUrl || `/race/${raceId}/questions/`;
+                    }
+                }, 1000);
+            } else {
+                // If we can't find the countdown elements, just redirect after 2 seconds
+                setTimeout(() => {
+                    window.location.href = redirectUrl || `/race/${raceId}/questions/`;
+                }, 2000);
+            }
+        } else {
+            // If notification element not found, just redirect immediately
+            window.location.href = redirectUrl || `/race/${raceId}/questions/`;
+        }
+    }
+    
+    // Close the modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('deleteConfirmModal');
+        if (event.target === modal) {
+            closeModal();
+        }
+    }
+    
+    // Function to refresh team data using fetch
+    function refreshTeamData(force = false) {
+        // Skip if WebSocket is connected and we haven't forced a refresh
+        if (wsConnected && !force && !pollingEnabled) {
+            return;
+        }
+        
+        // Throttle updates to at most once per second unless forced
+        const now = Date.now();
+        if (!force && now - lastUpdateTime < 1000) {
+            return;
+        }
+        
+        lastUpdateTime = now;
+        
+        fetch(window.location.href)
+            .then(response => response.text())
+            .then(html => {
+                // Create a temporary DOM element to parse the HTML
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Get the teams section
+                const newTeamsSection = doc.querySelector('.teams-grid') || doc.querySelector('.no-teams');
+                const currentTeamsSection = document.querySelector('.teams-grid') || document.querySelector('.no-teams');
+                
+                if (!newTeamsSection || !currentTeamsSection) {
+                    console.warn('Teams section not found in either the current page or fetched HTML');
+                    return;
+                }
+                
+                // Update only if there's a difference
+                if (newTeamsSection.innerHTML !== currentTeamsSection.innerHTML) {
+                    currentTeamsSection.innerHTML = newTeamsSection.innerHTML;
+                    
+                    // Highlight the section briefly to indicate update
+                    currentTeamsSection.style.transition = 'background-color 0.5s';
+                    currentTeamsSection.style.backgroundColor = 'rgba(144, 200, 60, 0.2)';
+                    setTimeout(() => {
+                        currentTeamsSection.style.backgroundColor = '';
+                    }, 500);
+                    
+                    // Update status indicator
+                    updateStatusIndicator('Teams updated!');
+                }
+            })
+            .catch(error => {
+                console.error('Error refreshing team data:', error);
+                updateStatusIndicator('Error refreshing', true);
+            });
+    }
+    
+    // Function to update the status indicator
+    function updateStatusIndicator(message, isError = false) {
+        const statusIndicator = document.getElementById('status-indicator');
+        if (!statusIndicator) return;
+        
+        statusIndicator.innerHTML = `<span style="display:inline-block;width:8px;height:8px;background:${isError ? '#dc3545' : '#90C83C'};border-radius:50%;margin-right:5px;"></span> ${message}`;
+        
+        if (!isError) {
+            // Reset the indicator after 1 second
+            setTimeout(() => {
+                if (wsConnected) {
+                    statusIndicator.innerHTML = '<span style="display:inline-block;width:8px;height:8px;background:#90C83C;border-radius:50%;margin-right:5px;"></span> Connected via WebSocket';
+                } else {
+                    statusIndicator.innerHTML = '<span style="display:inline-block;width:8px;height:8px;background:#ffc107;border-radius:50%;margin-right:5px;"></span> Polling for updates...';
+                }
+            }, 1000);
+        }
+    }
+    
+    // Initialize WebSocket when the DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set the lobby ID for the WebSocket connection
+        window.lobbyId = '{{ lobby.id }}';
+        window.raceId = '{{ lobby.race.id }}';
+        
+        // Add a visual indicator for real-time updates
+        const statusIndicator = document.createElement('div');
+        statusIndicator.id = 'status-indicator';
+        statusIndicator.style.position = 'fixed';
+        statusIndicator.style.bottom = '10px';
+        statusIndicator.style.right = '10px';
+        statusIndicator.style.padding = '8px 12px';
+        statusIndicator.style.background = 'rgba(33, 37, 41, 0.8)';
+        statusIndicator.style.color = '#90C83C';
+        statusIndicator.style.borderRadius = '4px';
+        statusIndicator.style.fontSize = '12px';
+        statusIndicator.style.zIndex = '9999';
+        statusIndicator.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+        statusIndicator.innerHTML = '<span style="display:inline-block;width:8px;height:8px;background:#ffc107;border-radius:50%;margin-right:5px;"></span> Initializing connection...';
+        document.body.appendChild(statusIndicator);
+        
+        // Set up WebSocket connection
+        try {
+            const lobbyId = '{{ lobby.id }}';
+            const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
+            const socket = new WebSocket(`${wsScheme}://${window.location.host}/ws/lobby/${lobbyId}/`);
+            
+            socket.onopen = function() {
+                console.log(`WebSocket connected for lobby ${lobbyId}`);
+                wsConnected = true;
+                updateStatusIndicator('Connected via WebSocket');
+                
+                // Continue polling as a fallback, but slow it down
+                pollingEnabled = true;
+            };
+            
+            socket.onmessage = function(e) {
+                try {
+                    const data = JSON.parse(e.data);
+                    console.log(`WebSocket message received:`, data);
+                    
+                    if (data.type === 'connection_established') {
+                        updateStatusIndicator('WebSocket connected!');
+                    } else if (data.type === 'team_joined' || data.type === 'team_left' || 
+                               data.type === 'team_member_joined') {
+                        // Force refresh on team updates
+                        refreshTeamData(true);
+                        updateStatusIndicator('Team update received!');
+                    } else if (data.type === 'race_started') {
+                        console.log('Race started! Showing notification...');
+                        
+                        // Show the race started notification and redirect
+                        startCountdownAndRedirect(
+                            window.raceId || data.race_id, 
+                            data.redirect_url
+                        );
+                    }
+                } catch (error) {
+                    console.error('Error parsing WebSocket message:', error);
+                }
+            };
+            
+            socket.onclose = function() {
+                console.log(`WebSocket disconnected for lobby ${lobbyId}`);
+                wsConnected = false;
+                updateStatusIndicator('WebSocket disconnected, using polling', true);
+                
+                // Fallback to more frequent polling
+                pollingEnabled = true;
+            };
+            
+            socket.onerror = function(error) {
+                console.error(`WebSocket error:`, error);
+                wsConnected = false;
+                updateStatusIndicator('WebSocket error, using polling', true);
+                
+                // Fallback to more frequent polling
+                pollingEnabled = true;
+            };
+        } catch (error) {
+            console.error('Error setting up WebSocket:', error);
+            updateStatusIndicator('Could not connect WebSocket, using polling', true);
+            
+            // Fallback to polling only
+            wsConnected = false;
+            pollingEnabled = true;
+        }
+        
+        // Initial refresh immediately
+        refreshTeamData(true);
+        
+        // Set up multiple polling intervals for better reliability
+        // Fast polling every 1.5 seconds when using polling as primary method
+        setInterval(() => {
+            if (pollingEnabled) {
+                refreshTeamData();
+            }
+        }, 1500);
+        
+        // Slow background polling every 5 seconds as a backup
+        setInterval(() => {
+            refreshTeamData();
+        }, 5000);
+        
+        // Force refresh every 20 seconds regardless of WebSocket state
+        setInterval(() => {
+            refreshTeamData(true);
+        }, 20000);
+        
+        // Add a more aggressive auto-reload mechanism as final backup
+        // Reload the entire page if no updates for 45 seconds
+        let lastPageUpdateTime = Date.now();
+        
+        // Track when data actually changes
+        const originalRefreshTeamData = refreshTeamData;
+        refreshTeamData = function(force = false) {
+            originalRefreshTeamData(force);
+            lastPageUpdateTime = Date.now();
+        };
+        
+        // Check and reload if needed
+        setInterval(() => {
+            const timeSinceUpdate = Date.now() - lastPageUpdateTime;
+            if (timeSinceUpdate > 45000) {
+                console.log('No updates for 45 seconds, reloading page');
+                // Add timestamp to URL to bypass cache
+                window.location.href = window.location.href.split('?')[0] + '?t=' + Date.now();
+            }
+        }, 10000);
+        
+        // Add visual indicator for last update time
+        const lastUpdateIndicator = document.createElement('div');
+        lastUpdateIndicator.id = 'last-update-indicator';
+        lastUpdateIndicator.style.position = 'fixed';
+        lastUpdateIndicator.style.bottom = '10px';
+        lastUpdateIndicator.style.left = '10px';
+        lastUpdateIndicator.style.backgroundColor = 'rgba(33, 37, 41, 0.8)';
+        lastUpdateIndicator.style.color = '#90C83C';
+        lastUpdateIndicator.style.padding = '5px 10px';
+        lastUpdateIndicator.style.borderRadius = '4px';
+        lastUpdateIndicator.style.fontSize = '12px';
+        lastUpdateIndicator.style.zIndex = '9999';
+        lastUpdateIndicator.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+        lastUpdateIndicator.innerHTML = 'Last update: <span id="last-update-time">just now</span>';
+        document.body.appendChild(lastUpdateIndicator);
+        
+        // Update the last update time display
+        function updateLastUpdateTime() {
+            const timeDisplay = document.getElementById('last-update-time');
+            if (!timeDisplay) return;
+            
+            const secondsSinceUpdate = Math.floor((Date.now() - lastPageUpdateTime) / 1000);
+            
+            if (secondsSinceUpdate < 5) {
+                timeDisplay.textContent = 'just now';
+                lastUpdateIndicator.style.color = '#90C83C';
+            } else if (secondsSinceUpdate < 15) {
+                timeDisplay.textContent = secondsSinceUpdate + ' seconds ago';
+                lastUpdateIndicator.style.color = '#90C83C';
+            } else if (secondsSinceUpdate < 30) {
+                timeDisplay.textContent = secondsSinceUpdate + ' seconds ago';
+                lastUpdateIndicator.style.color = '#FFC107'; // Yellow warning
+            } else {
+                timeDisplay.textContent = secondsSinceUpdate + ' seconds ago';
+                lastUpdateIndicator.style.color = '#DC3545'; // Red warning
+            }
+        }
+        
+        // Update time display every second
+        setInterval(updateLastUpdateTime, 1000);
+        
+        // Add manual refresh button if not already present
+        if (!document.getElementById('manual-refresh-btn')) {
+            const refreshBtn = document.createElement('button');
+            refreshBtn.id = 'manual-refresh-btn';
+            refreshBtn.className = 'btn btn-sm';
+            refreshBtn.style.position = 'fixed';
+            refreshBtn.style.bottom = '10px';
+            refreshBtn.style.right = '10px';
+            refreshBtn.style.backgroundColor = 'rgba(144, 200, 60, 0.8)';
+            refreshBtn.style.color = 'white';
+            refreshBtn.style.border = 'none';
+            refreshBtn.style.padding = '6px 12px';
+            refreshBtn.style.borderRadius = '4px';
+            refreshBtn.style.fontSize = '12px';
+            refreshBtn.style.zIndex = '9999';
+            refreshBtn.innerHTML = '<i class="fa fa-refresh"></i> Refresh Now';
+            
+            refreshBtn.addEventListener('click', function() {
+                this.disabled = true;
+                this.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Refreshing...';
+                refreshTeamData(true);
+                
+                setTimeout(() => {
+                    this.disabled = false;
+                    this.innerHTML = '<i class="fa fa-refresh"></i> Refresh Now';
+                }, 1000);
+            });
+            
+            document.body.appendChild(refreshBtn);
+        }
+        
+        // Add auto-refresh progress indicator
+        const autoRefreshIndicator = document.createElement('div');
+        autoRefreshIndicator.id = 'auto-refresh-indicator';
+        autoRefreshIndicator.style.position = 'fixed';
+        autoRefreshIndicator.style.bottom = '10px';
+        autoRefreshIndicator.style.left = '50%';
+        autoRefreshIndicator.style.transform = 'translateX(-50%)';
+        autoRefreshIndicator.style.backgroundColor = 'rgba(33, 37, 41, 0.8)';
+        autoRefreshIndicator.style.color = '#90C83C';
+        autoRefreshIndicator.style.padding = '5px 10px';
+        autoRefreshIndicator.style.borderRadius = '4px';
+        autoRefreshIndicator.style.fontSize = '12px';
+        autoRefreshIndicator.style.zIndex = '9999';
+        autoRefreshIndicator.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+        autoRefreshIndicator.innerHTML = 'Auto-refresh in <span id="refresh-countdown">5</span>s';
+        document.body.appendChild(autoRefreshIndicator);
+        
+        // Create and start the auto-refresh countdown
+        let refreshCountdown = 5;
+        function updateRefreshCountdown() {
+            const countdownEl = document.getElementById('refresh-countdown');
+            if (!countdownEl) return;
+            
+            refreshCountdown--;
+            countdownEl.textContent = refreshCountdown;
+            
+            if (refreshCountdown <= 0) {
+                refreshCountdown = 5;
+                refreshTeamData(true);
+            }
+        }
+        
+        // Update countdown every second
+        setInterval(updateRefreshCountdown, 1000);
+        
+        // Check if race already started (in case we missed the WebSocket event)
+        if ('{{ lobby.hunt_started }}' === 'True') {
+            console.log('Race already started according to page data!');
+            startCountdownAndRedirect(window.raceId);
+        } else {
+            // Set up periodic checks for race status
+            setInterval(() => {
+                fetch(`/lobby/{{ lobby.id }}/status/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.hunt_started) {
+                            console.log('Race started according to status check!');
+                            startCountdownAndRedirect(data.race_id, data.redirect_url);
+                        }
+                    })
+                    .catch(error => console.error('Error checking race status:', error));
+            }, 5000);
+        }
+    });
+</script>
+{% endblock %}

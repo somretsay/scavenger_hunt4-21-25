@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}Leaderboard{% endblock %}
+
+{% block welcome_text %}Leaderboard{% endblock %}
+
+{% block content %}
+    <div class="container py-4">
+        <div class="dashboard-box p-4">
+            <h2 style="color: #90C83C; text-align: center; margin-bottom: 3rem;">Leaderboard</h2>
+            
+            <div id="leaderboard-container" class="table-responsive mb-5">
+                <table class="w-100">
+                    <thead>
+                        <tr>
+                            <th>Team Name</th>
+                            <th>Score</th>
+                            <th>Race</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body">
+                        {% for team in teams %}
+                        <tr class="team-row" data-team-id="{{ team.id }}" data-lobby-id="{{ team.lobby.id }}">
+                            <td class="team-name">{{ team.name }}</td>
+                            <td class="team-score">{{ team.score }}</td>
+                            <td class="team-lobby">
+                                {% if team.lobby.race %}
+                                    {{ team.lobby.race.name }} 
+                                    {% if team.lobby.code %}
+                                        (Code: {{ team.lobby.code }})
+                                    {% endif %}
+                                {% else %}
+                                    {{ team.lobby_name|default:"Unknown Race" }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr class="no-teams-message">
+                            <td colspan="3" class="text-center">No teams available</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="text-center mt-5">
+                <a href="{% url 'leader_dashboard' %}" class="btn btn-success btn-lg">Back to Dashboard</a>
+            </div>
+        </div>
+    </div>
+
+<style>
+    .dashboard-box {
+        background-color: rgba(33, 37, 41, 0.9);
+        border-radius: 15px;
+        border: 1px solid rgba(144, 200, 60, 0.2);
+        padding: 2.5rem !important;
+    }
+    
+    .table-responsive {
+        overflow-x: auto;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2.5rem;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    th, td {
+        padding: 1.2rem;
+        text-align: left;
+        border-bottom: 1px solid rgba(144, 200, 60, 0.2);
+    }
+    
+    th {
+        color: #90C83C;
+        font-weight: bold;
+        white-space: nowrap;
+        font-size: 1.2rem;
+    }
+    
+    td {
+        color: white;
+        font-size: 1.1rem;
+    }
+    
+    tr:last-child td {
+        border-bottom: none;
+    }
+    
+    tr:hover {
+        background: rgba(144, 200, 60, 0.1);
+    }
+    
+    .text-center {
+        text-align: center;
+    }
+    
+    .btn-success {
+        background-color: #90C83C;
+        border-color: #90C83C;
+        padding: 0.8rem 2rem;
+        font-size: 1.1rem;
+        margin-top: 1.5rem;
+    }
+    
+    .btn-success:hover {
+        background-color: #7ab32f;
+        border-color: #7ab32f;
+    }
+    
+    /* Override any button styles to ensure they're all green */
+    .btn, .btn-primary, button[type="submit"] {
+        background: linear-gradient(135deg, #90C83C, #7AAF2F) !important;
+        color: white !important;
+        border-color: #7AAF2F !important;
+    }
+
+    .btn:hover, .btn-primary:hover, button[type="submit"]:hover {
+        background: linear-gradient(135deg, #7AAF2F, #618825) !important;
+        color: white !important;
+        border-color: #618825 !important;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Simple data refresh function
+    function refreshLeaderboard() {
+        console.log('Refreshing leaderboard data...');
+        
+        fetch('/api/leaderboard-data/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.teams) {
+                    renderTeams(data.teams);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching leaderboard data:', error);
+            });
+    }
+    
+    // Render teams to the leaderboard
+    function renderTeams(teams) {
+        const tbody = document.getElementById('leaderboard-body');
+        
+        // Sort teams by score (highest first)
+        teams.sort((a, b) => b.score - a.score);
+        
+        // Clear the current leaderboard
+        tbody.innerHTML = '';
+        
+        // If no teams, show a message
+        if (!teams.length) {
+            const row = document.createElement('tr');
+            row.className = 'no-teams-message';
+            
+            const cell = document.createElement('td');
+            cell.colSpan = 3;
+            cell.className = 'text-center';
+            cell.textContent = 'No teams available';
+            
+            row.appendChild(cell);
+            tbody.appendChild(row);
+            return;
+        }
+        
+        // Add each team
+        for (let i = 0; i < teams.length; i++) {
+            const team = teams[i];
+            
+            // Handle different data structures
+            let lobbyName = 'Unknown Race';
+            
+            if (team.lobby && team.lobby.race && team.lobby.race.name) {
+                lobbyName = team.lobby.race.name;
+                if (team.lobby.code) {
+                    lobbyName += ` (Code: ${team.lobby.code})`;
+                }
+            } else if (team.lobby_name) {
+                lobbyName = team.lobby_name;
+            }
+            
+            const row = document.createElement('tr');
+            row.className = 'team-row';
+            
+            // Create name cell
+            const nameCell = document.createElement('td');
+            nameCell.className = 'team-name';
+            nameCell.textContent = team.name;
+            row.appendChild(nameCell);
+            
+            // Create score cell
+            const scoreCell = document.createElement('td');
+            scoreCell.className = 'team-score';
+            scoreCell.textContent = team.score;
+            row.appendChild(scoreCell);
+            
+            // Create lobby cell
+            const lobbyCell = document.createElement('td');
+            lobbyCell.className = 'team-lobby';
+            lobbyCell.textContent = lobbyName;
+            row.appendChild(lobbyCell);
+            
+            tbody.appendChild(row);
+        }
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Leaderboard initialized');
+        
+        // Fetch initial data
+        refreshLeaderboard();
+        
+        // Set up periodic refresh every 5 seconds
+        setInterval(refreshLeaderboard, 5000);
+    });
+</script>
+{% endblock %}
