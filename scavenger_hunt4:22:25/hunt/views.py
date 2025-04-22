@@ -1313,38 +1313,28 @@ def add_zone(request, race_id):
 
 @login_required
 def add_question(request, race_id):
-    """
-    Handle the “Add Question” form POST.
-    Since zones are no longer in your UI, we’ll
-    auto‑create (or reuse) a “General” zone per race.
-    """
     race = get_object_or_404(Race, id=race_id)
 
     if request.method == 'POST':
-        text   = request.POST.get('text', '').strip()
+        text = request.POST.get('text', '').strip()
         answer = request.POST.get('answer', '').strip()
 
         if not text or not answer:
             messages.error(request, 'Both the question text and answer are required.')
         else:
-            # get_or_create a single default zone for this race
-            default_zone, _ = Zone.objects.get_or_create(
-                race=race,
-                name='General',                  # or whatever label you prefer
-                defaults={'location': ''}        # blank location
-            )
-
             try:
                 Question.objects.create(
-                    zone=default_zone,
+                    race=race,
                     text=text,
-                    answer=answer
+                    answer=answer,
+                    points=100
                 )
                 messages.success(request, 'Question added successfully!')
             except Exception as e:
                 messages.error(request, f'Error adding question: {e}')
 
-    return redirect('race_detail', race_id=race.id)
+    return redirect('race_detail', race_id=race_id)
+
 
 def student_question(request, lobby_id, question_id):
     """Display a question to the student"""
