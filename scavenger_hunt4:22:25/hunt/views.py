@@ -1309,11 +1309,12 @@ def add_zone(request, race_id):
             
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
-@require_POST
+@login_required
 def add_question(request, race_id):
     """
-    Handle the “Add Question” form submission.
-    No more zones—just text and answer.
+    Handle the “Add Question” form POST.
+    Since zones are no longer in your UI, we’ll
+    auto‑create (or reuse) a “General” zone per race.
     """
     race = get_object_or_404(Race, id=race_id)
 
@@ -1322,11 +1323,18 @@ def add_question(request, race_id):
         answer = request.POST.get('answer', '').strip()
 
         if not text or not answer:
-            messages.error(request, 'Both question text and answer are required.')
+            messages.error(request, 'Both the question text and answer are required.')
         else:
+            # get_or_create a single default zone for this race
+            default_zone, _ = Zone.objects.get_or_create(
+                race=race,
+                name='General',                  # or whatever label you prefer
+                defaults={'location': ''}        # blank location
+            )
+
             try:
-                # Create the Question—zones have been removed, so we only supply text & answer
                 Question.objects.create(
+                    zone=default_zone,
                     text=text,
                     answer=answer
                 )
@@ -1334,7 +1342,6 @@ def add_question(request, race_id):
             except Exception as e:
                 messages.error(request, f'Error adding question: {e}')
 
-    # Whether GET or POST, always redirect back to the race detail
     return redirect('race_detail', race_id=race.id)
 
 def student_question(request, lobby_id, question_id):
